@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useApi } from '../../hooks/UseApi';
 import { doctorService } from '../../services/doctorService';
@@ -32,14 +33,24 @@ const DetallePaciente = () => {
 
   // ✅ CORREGIDO: Recomendaciones del paciente
   const { data: recomendacionesData, refetch: refetchRecomendaciones } = useApi(() => 
-    recomendacionesService.getRecomendacionesPaciente?.(id) || 
-    Promise.resolve({ data: [] })
-  );
+  doctorService.getRecomendacionesPaciente(id)
+);
+
 
   // ✅ Recomendaciones pendientes de aprobación
   const { data: pendientesData, refetch: refetchPendientes } = useApi(() => 
     doctorService.getRecomendacionesPendientes()
   );
+
+  useEffect(() => {
+  if (recomendacionesData) {
+    console.log('=== 🔍 DEBUG RECOMENDACIONES PACIENTE ===');
+    console.log('📊 Data completa:', recomendacionesData);
+    console.log('📋 Estructura recomendaciones:', recomendacionesData.data?.recomendaciones);
+    console.log('🔢 Todas recomendaciones:', recomendacionesData.data?.recomendaciones?.todas);
+    console.log('📈 Estadísticas:', recomendacionesData.data?.estadisticas);
+  }
+}, [recomendacionesData]);
 
   // ✅ DEBUG
   console.log('🔍 Recomendaciones data:', recomendacionesData);
@@ -65,23 +76,23 @@ const DetallePaciente = () => {
   );
 
   // ✅ CORREGIDO: Procesar datos basado en la estructura real
-  const citasPaciente = citasPacienteData?.data?.citas || [];
-  const sintomasPaciente = sintomasData?.data || [];
+ const citasPaciente = citasPacienteData?.data?.citas || [];
+const sintomasPaciente = sintomasData?.data || [];
+
   
-  // ✅ CLAVE: Acceso correcto a las recomendaciones
-  const todasRecomendaciones = recomendacionesData?.data?.recomendaciones || [];
+ const todasRecomendaciones = recomendacionesData?.data?.recomendaciones?.todas || [];
   
-  // ✅ CORREGIDO: Filtrar recomendaciones pendientes para este paciente
-  const todasPendientes = pendientesData?.data || [];
-  const recomendacionesPendientesDoctor = todasPendientes.filter(rec => 
-    rec.paciente?.id == id || rec.pacienteId == id
-  );
+  
+
+ const recomendacionesPendientesDoctor = recomendacionesData?.data?.recomendaciones?.pendientesAprobacion || [];
+ const recomendacionesActivas = recomendacionesData?.data?.recomendaciones?.activas || [];
+
 
   const estadisticasCitas = citasPacienteData?.data?.estadisticas || {};
   const proximaCita = citasPacienteData?.data?.proximaCita;
   const ultimaCita = citasPacienteData?.data?.ultimaCita;
 
-  // ✅ Funciones de ayuda para estilos
+ 
   const getEtapaColor = (etapa) => {
     switch (etapa) {
       case 'ETAPA_1': return 'bg-green-100 text-green-800 border-green-200';
@@ -91,7 +102,7 @@ const DetallePaciente = () => {
       case 'ETAPA_5': return 'bg-red-200 text-red-900 border-red-300';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
-  };
+  };            
 
   const getEstadoColor = (estado) => {
     switch (estado) {
@@ -113,7 +124,7 @@ const DetallePaciente = () => {
       default: return 'bg-gray-100 text-gray-800';
     }
   };
-
+                
   const getEstadoRecomendacionColor = (estado) => {
     switch (estado) {
       case 'PENDIENTE_APROBACION': return 'bg-yellow-100 text-yellow-800';

@@ -10,7 +10,7 @@ const CitasPaciente = () => {
     citasService.getMisCitas()
   );
 
-  const { user } = useAuth();
+  
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [createLoading, setCreateLoading] = useState(false);
   const [message, setMessage] = useState('');

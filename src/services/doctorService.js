@@ -23,6 +23,11 @@ export const doctorService = {
     const response = await api.get('/api/citas/mis-citas-doctor');
     return response.data;
   },
+  // ✅ NUEVO: Obtener recomendaciones de un paciente específico
+  getRecomendacionesPaciente: async (pacienteId) => {
+    const response = await api.get(`/api/doctores/pacientes/${pacienteId}/recomendaciones`);
+    return response.data;
+  },
 
   getCitasPaciente: async (pacienteId) => {
     const response = await api.get(`/api/doctores/pacientes/${pacienteId}/citas`);

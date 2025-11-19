@@ -15,7 +15,7 @@ export const pacienteService = {
 
   // ✅ Dashboard del paciente
   getDashboard: async () => {
-    const response = await api.get('/api/paciente/dashboard');
+    const response = await api.get('/api/dashboard/principal');
     return response.data;
   },
 
