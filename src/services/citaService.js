@@ -21,7 +21,7 @@ export const citasService = {
 
   // ✅ Obtener citas del doctor autenticado
   getCitasDoctor: async () => {
-    const response = await api.get('/api/citas/mis-citas');
+    const response = await api.get('/api/citas/mis-citas-doctor');
     return response.data;
   },
 
@@ -112,15 +112,42 @@ export const citasService = {
     } catch (error) {
       return false;
     }
+  },
+    // ✅ NUEVO: Confirmar cita (doctor)
+  confirmarCita: async (citaId) => {
+    const response = await api.put(`/api/citas/${citaId}/confirmar`);
+    return response.data;
+  },
+
+  // ✅ NUEVO: Rechazar cita (doctor)
+  rechazarCita: async (citaId, motivo) => {
+    const response = await api.put(`/api/citas/${citaId}/rechazar`, {
+      motivo: motivo || "No especificado"
+    });
+    return response.data;
+  },
+
+  // ✅ NUEVO: Obtener citas pendientes (doctor)
+  getCitasPendientes: async () => {
+    const response = await api.get('/api/doctores/citas-pendientes');
+    return response.data;
+  },
+
+  // ✅ NUEVO: Obtener estadísticas de citas (doctor)
+  getEstadisticasCitasDoctor: async () => {
+    const response = await api.get('/api/doctores/estadisticas-citas');
+    return response.data;
   }
 };
 
 // ✅ Tipos de estado de cita para usar en React
 export const ESTADO_CITA = {
-  PROGRAMADA: 'PROGRAMADA',
+  PENDIENTE: 'PENDIENTE',      // ✅ NUEVO
   CONFIRMADA: 'CONFIRMADA',
+  PROGRAMADA: 'PROGRAMADA', 
   COMPLETADA: 'COMPLETADA',
   CANCELADA: 'CANCELADA',
+  RECHAZADA: 'RECHAZADA',      // ✅ NUEVO
   REPROGRAMADA: 'REPROGRAMADA'
 };
 

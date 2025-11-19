@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState} from 'react';
 import { useApi } from '../../hooks/UseApi';
 import { recomendacionesService } from '../../services/recomendacionesService';
+import {  getColorPrioridad, getColorEstado, ESTADO_RECOMENDACION } from '../../services/sintomasService';
 
 const RecomendacionesPaciente = () => {
   const { data: recomendacionesData, loading, error, refetch } = useApi(() => 
@@ -14,26 +15,47 @@ const RecomendacionesPaciente = () => {
   const [activeTab, setActiveTab] = useState('todas');
   const [generateLoading, setGenerateLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successData, setSuccessData] = useState(null);
+
+  // ✅ NUEVO: Estado para manejar errores específicos
+  const [errorDetails, setErrorDetails] = useState('');
 
   const handleGenerarRecomendaciones = async () => {
-    if (!window.confirm('¿Generar nuevas recomendaciones personalizadas? Esto reemplazará las recomendaciones actuales.')) {
+    if (!window.confirm('¿Generar nuevas recomendaciones personalizadas? Esto analizará tus síntomas recientes y generará recomendaciones personalizadas.')) {
       return;
     }
 
     setGenerateLoading(true);
     setMessage('');
+    setErrorDetails('');
 
     try {
       const response = await recomendacionesService.generarRecomendaciones();
       
       if (response.success) {
-        setMessage('✅ Recomendaciones generadas exitosamente');
+        // ✅ NUEVO: Mostrar información detallada sobre recomendaciones generadas
+        setSuccessData({
+          total: response.data.recomendaciones?.length || 0,
+          pendientesAprobacion: response.data.pendientesAprobacion || 0,
+          activas: response.data.activas || 0,
+          mensaje: response.data.mensajePaciente || 'Recomendaciones generadas exitosamente'
+        });
+        setShowSuccessModal(true);
         refetch();
       } else {
         setMessage('❌ Error: ' + response.message);
       }
     } catch (error) {
-      setMessage('❌ Error al generar recomendaciones: ' + error.response?.data?.message);
+      const errorMessage = error.response?.data?.message || error.message;
+      setMessage('❌ ' + errorMessage);
+      
+      // ✅ NUEVO: Mostrar detalles específicos del error
+      if (errorMessage.includes('síntomas')) {
+        setErrorDetails('Registra al menos un síntoma antes de generar recomendaciones.');
+      } else if (errorMessage.includes('cambios significativos')) {
+        setErrorDetails('Espera a tener cambios significativos en tus síntomas para generar nuevas recomendaciones.');
+      }
     } finally {
       setGenerateLoading(false);
     }
@@ -54,6 +76,27 @@ const RecomendacionesPaciente = () => {
     }
   };
 
+  // ✅ NUEVO: Función para obtener recomendaciones filtradas por estado
+  const getRecomendacionesFiltradas = () => {
+    const todasRecomendaciones = recomendacionesData?.data?.recomendaciones || [];
+    
+    // ✅ SOLO mostrar recomendaciones ACTIVAS, APROBADAS o MODIFICADAS al paciente
+    const recomendacionesActivas = todasRecomendaciones.filter(r => 
+      r.estado === ESTADO_RECOMENDACION.ACTIVA || 
+      r.estado === ESTADO_RECOMENDACION.APROBADA || 
+      r.estado === ESTADO_RECOMENDACION.MODIFICADA
+    );
+
+    const recomendacionesPendientes = recomendacionesActivas.filter(r => !r.completada);
+    const recomendacionesCompletadas = recomendacionesActivas.filter(r => r.completada);
+
+    return {
+      todas: recomendacionesActivas,
+      pendientes: recomendacionesPendientes,
+      completadas: recomendacionesCompletadas
+    };
+  };
+
   if (loading) return (
     <div className="flex justify-center items-center h-64">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -66,12 +109,13 @@ const RecomendacionesPaciente = () => {
     </div>
   );
 
-  const todasRecomendaciones = recomendacionesData?.data || [];
-  const recomendacionesPendientes = todasRecomendaciones.filter(r => !r.completada);
-  const recomendacionesCompletadas = todasRecomendaciones.filter(r => r.completada);
-
+  const { todas, pendientes, completadas } = getRecomendacionesFiltradas();
   const ejercicios = ejerciciosData?.data || [];
   const consejos = consejosData?.data || [];
+
+  // ✅ NUEVO: Contar recomendaciones pendientes de aprobación (para el mensaje)
+  const recomendacionesPendientesAprobacion = recomendacionesData?.data?.mensaje ? 
+    (recomendacionesData.data.mensaje.match(/\d+/)?.[0] || 0) : 0;
 
   const categorias = {
     EJERCICIO: { label: 'Ejercicios', color: 'blue', icon: '💪' },
@@ -84,15 +128,15 @@ const RecomendacionesPaciente = () => {
   const getRecomendacionesPorTab = () => {
     switch (activeTab) {
       case 'pendientes':
-        return recomendacionesPendientes;
+        return pendientes;
       case 'completadas':
-        return recomendacionesCompletadas;
+        return completadas;
       case 'ejercicios':
         return ejercicios;
       case 'consejos':
         return consejos;
       default:
-        return todasRecomendaciones;
+        return todas;
     }
   };
 
@@ -106,12 +150,41 @@ const RecomendacionesPaciente = () => {
           <button
             onClick={handleGenerarRecomendaciones}
             disabled={generateLoading}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
+            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center space-x-2"
           >
-            {generateLoading ? 'Generando...' : '🔄 Generar Nuevas'}
+            {generateLoading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <span>Generando...</span>
+              </>
+            ) : (
+              <>
+                <span>🔄</span>
+                <span>Generar Nuevas</span>
+              </>
+            )}
           </button>
         </div>
       </div>
+
+      {/* ✅ NUEVO: Mensaje sobre recomendaciones pendientes de aprobación */}
+      {recomendacionesPendientesAprobacion > 0 && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <span className="text-yellow-400 text-lg">⏳</span>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-yellow-800">
+                Tienes {recomendacionesPendientesAprobacion} recomendaciones pendientes de aprobación médica
+              </h3>
+              <p className="text-sm text-yellow-700 mt-1">
+                Tu doctor está revisando las recomendaciones generadas. Te notificaremos cuando estén disponibles.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {message && (
         <div className={`p-4 rounded-md ${
@@ -119,7 +192,22 @@ const RecomendacionesPaciente = () => {
             ? 'bg-red-100 border border-red-400 text-red-700' 
             : 'bg-green-100 border border-green-400 text-green-700'
         }`}>
-          {message}
+          <div className="flex justify-between items-start">
+            <div>
+              {message}
+              {errorDetails && (
+                <p className="text-sm mt-1 opacity-90">{errorDetails}</p>
+              )}
+            </div>
+            {message.includes('❌') && (
+              <button 
+                onClick={() => setMessage('')}
+                className="text-red-500 hover:text-red-700"
+              >
+                ✕
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -145,20 +233,20 @@ const RecomendacionesPaciente = () => {
       {/* Estadísticas rápidas */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white p-4 rounded-lg shadow-md text-center">
-          <div className="text-2xl font-bold text-blue-600">{todasRecomendaciones.length}</div>
-          <div className="text-sm text-gray-600">Total</div>
+          <div className="text-2xl font-bold text-blue-600">{todas.length}</div>
+          <div className="text-sm text-gray-600">Disponibles</div>
         </div>
         <div className="bg-white p-4 rounded-lg shadow-md text-center">
-          <div className="text-2xl font-bold text-orange-600">{recomendacionesPendientes.length}</div>
-          <div className="text-sm text-gray-600">Pendientes</div>
+          <div className="text-2xl font-bold text-orange-600">{pendientes.length}</div>
+          <div className="text-sm text-gray-600">Por Completar</div>
         </div>
         <div className="bg-white p-4 rounded-lg shadow-md text-center">
-          <div className="text-2xl font-bold text-green-600">{recomendacionesCompletadas.length}</div>
+          <div className="text-2xl font-bold text-green-600">{completadas.length}</div>
           <div className="text-sm text-gray-600">Completadas</div>
         </div>
         <div className="bg-white p-4 rounded-lg shadow-md text-center">
           <div className="text-2xl font-bold text-red-600">
-            {recomendacionesPendientes.filter(r => r.prioridad === 'URGENTE').length}
+            {pendientes.filter(r => r.prioridad === 'URGENTE').length}
           </div>
           <div className="text-sm text-gray-600">Urgentes</div>
         </div>
@@ -169,9 +257,9 @@ const RecomendacionesPaciente = () => {
         <div className="border-b">
           <nav className="flex -mb-px">
             {[
-              { id: 'todas', label: `Todas (${todasRecomendaciones.length})` },
-              { id: 'pendientes', label: `Pendientes (${recomendacionesPendientes.length})` },
-              { id: 'completadas', label: `Completadas (${recomendacionesCompletadas.length})` },
+              { id: 'todas', label: `Disponibles (${todas.length})` },
+              { id: 'pendientes', label: `Por Completar (${pendientes.length})` },
+              { id: 'completadas', label: `Completadas (${completadas.length})` },
               { id: 'ejercicios', label: `Ejercicios (${ejercicios.length})` },
               { id: 'consejos', label: `Consejos (${consejos.length})` }
             ].map((tab) => (
@@ -214,17 +302,13 @@ const RecomendacionesPaciente = () => {
                       </div>
                       
                       <div className="flex flex-col items-end space-y-1">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          recomendacion.prioridad === 'URGENTE' ? 'bg-red-100 text-red-800' :
-                          recomendacion.prioridad === 'ALTA' ? 'bg-orange-100 text-orange-800' :
-                          recomendacion.prioridad === 'MEDIA' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-green-100 text-green-800'
-                        }`}>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getColorPrioridad(recomendacion.prioridad)}`}>
                           {recomendacion.prioridad}
                         </span>
                         
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium bg-${categoria.color}-100 text-${categoria.color}-800`}>
-                          {categoria.label}
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getColorEstado(recomendacion.estado)}`}>
+                          {recomendacion.estado === 'MODIFICADA' ? 'Ajustada por doctor' : 
+                           recomendacion.estado === 'APROBADA' ? 'Aprobada' : 'Activa'}
                         </span>
                       </div>
                     </div>
@@ -233,6 +317,15 @@ const RecomendacionesPaciente = () => {
                     <p className="text-gray-600 mb-4 text-sm leading-relaxed">
                       {recomendacion.descripcion}
                     </p>
+
+                    {/* ✅ NUEVO: Comentarios del doctor si existen */}
+                    {recomendacion.comentariosDoctor && (
+                      <div className="mb-3 p-2 bg-blue-50 rounded border border-blue-200">
+                        <p className="text-xs text-blue-800">
+                          <span className="font-semibold">Nota del doctor:</span> {recomendacion.comentariosDoctor}
+                        </p>
+                      </div>
+                    )}
 
                     {/* Footer */}
                     <div className="flex justify-between items-center">
@@ -256,13 +349,21 @@ const RecomendacionesPaciente = () => {
                       )}
                     </div>
 
-                    {/* Indicador de IA */}
-                    {recomendacion.categoria?.includes('_IA') && (
-                      <div className="mt-2 text-xs text-blue-600 flex items-center">
-                        <span className="w-2 h-2 bg-blue-600 rounded-full mr-1"></span>
-                        Generado por IA
-                      </div>
-                    )}
+                    {/* ✅ NUEVO: Indicadores de fuente */}
+                    <div className="mt-2 flex justify-between items-center text-xs">
+                      {recomendacion.fuente === 'IA_OPENAI' && (
+                        <span className="text-blue-600 flex items-center">
+                          <span className="w-2 h-2 bg-blue-600 rounded-full mr-1"></span>
+                          Generado por IA
+                        </span>
+                      )}
+                      {recomendacion.fuente === 'SISTEMA' && (
+                        <span className="text-gray-500 flex items-center">
+                          <span className="w-2 h-2 bg-gray-500 rounded-full mr-1"></span>
+                          Recomendación del sistema
+                        </span>
+                      )}
+                    </div>
                   </div>
                 );
               })}
@@ -294,15 +395,54 @@ const RecomendacionesPaciente = () => {
         </div>
       </div>
 
+      {/* ✅ NUEVO: Modal de éxito */}
+      {showSuccessModal && successData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md mx-4">
+            <div className="text-center">
+              <div className="text-6xl mb-4">🎯</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                Recomendaciones Generadas
+              </h3>
+              <p className="text-gray-600 mb-4">
+                {successData.mensaje}
+              </p>
+              
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="bg-blue-50 p-3 rounded">
+                  <div className="text-2xl font-bold text-blue-600">{successData.total}</div>
+                  <div className="text-sm text-blue-800">Total generadas</div>
+                </div>
+                <div className="bg-yellow-50 p-3 rounded">
+                  <div className="text-2xl font-bold text-yellow-600">{successData.pendientesAprobacion}</div>
+                  <div className="text-sm text-yellow-800">En revisión médica</div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowSuccessModal(false)}
+                className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 w-full"
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Información adicional */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
         <h3 className="text-lg font-semibold text-blue-900 mb-2">
           💡 Sobre tus recomendaciones
         </h3>
+        <p className="text-blue-800 text-sm mb-2">
+          • <strong>Recomendaciones del sistema:</strong> Siempre disponibles y aprobadas automáticamente
+        </p>
+        <p className="text-blue-800 text-sm mb-2">
+          • <strong>Recomendaciones de IA:</strong> Son revisadas por tu doctor antes de estar disponibles
+        </p>
         <p className="text-blue-800 text-sm">
-          Tus recomendaciones son generadas personalmente basadas en tu perfil médico, 
-          síntomas registrados y etapa de Parkinson. Las recomendaciones marcadas como 
-          <span className="font-semibold"> URGENTE</span> deben ser atendidas prioritariamente.
+          • Las recomendaciones marcadas como <span className="font-semibold">URGENTE</span> deben ser atendidas prioritariamente
         </p>
       </div>
     </div>

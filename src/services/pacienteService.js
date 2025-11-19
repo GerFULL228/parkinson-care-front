@@ -20,7 +20,7 @@ export const pacienteService = {
   },
 
   // ✅ Estadísticas
-   getDashboardPrincipal: async () => {
+  getDashboardPrincipal: async () => {
     const response = await api.get('/api/dashboard/principal');
     return response.data;
   },
@@ -29,6 +29,7 @@ export const pacienteService = {
     const response = await api.get('/api/dashboard/estadisticas');
     return response.data;
   },
+
   getEstadisticas: async () => {
     const response = await api.get('/api/paciente/estadisticas');
     return response.data;
@@ -36,7 +37,7 @@ export const pacienteService = {
 
   // ✅ Historial de síntomas
   getHistorialSintomas: async () => {
-    const response = await api.get('/api/paciente/sintomas');
+    const response = await api.get('/api/sintomas');
     return response.data;
   },
 
@@ -46,9 +47,15 @@ export const pacienteService = {
     return response.data;
   },
 
-  // ✅ Recomendaciones
+  // ✅ Recomendaciones (usar recomendacionesService en su lugar)
   getRecomendaciones: async () => {
-    const response = await api.get('/api/paciente/recomendaciones');
+    const response = await api.get('/api/recomendaciones');
+    return response.data;
+  },
+
+  // ✅ NUEVO: Generar recomendaciones (usar recomendacionesService en su lugar)
+  generarRecomendaciones: async () => {
+    const response = await api.post('/api/recomendaciones/generar');
     return response.data;
   }
 };

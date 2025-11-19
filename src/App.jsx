@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/common/ProtectedRoute';
@@ -129,6 +129,35 @@ const AppRoutes = () => {
 };
 
 function App() {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(false); // <--- Agrega esto
+
+  const handleLogin = async (username, password) => {
+    try {
+      setLoading(true);
+      const result = await authService.login(username, password);
+      
+      if (result.token) {
+        setUser({
+          username: result.username || username,
+          nombre: result.nombre || username,
+          rol: result.rol,
+          token: result.token
+        });
+        return { success: true, data: result };
+      }
+      return { success: false, message: 'Error en el login' };
+    } catch (error) {
+      return { success: false, message: error.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+  };
+
   return (
     <AuthProvider>
       <Router>

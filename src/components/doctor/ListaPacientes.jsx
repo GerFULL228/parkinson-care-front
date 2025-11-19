@@ -4,26 +4,36 @@ import { doctorService } from '../../services/doctorService';
 import { Link } from 'react-router-dom';
 
 const ListaPacientes = () => {
-  const { data: pacientesData, loading, error } = useApi(() => 
+  const { data: responseData, loading, error } = useApi(() => 
     doctorService.getPacientes()
   );
-
-  const [searchTerm, setSearchTerm] = useState('');
+   const [searchTerm, setSearchTerm] = useState('');
   const [filterEtapa, setFilterEtapa] = useState('');
+
 
   if (loading) return (
     <div className="flex justify-center items-center h-64">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
     </div>
   );
-
   if (error) return (
     <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
       Error al cargar pacientes: {error}
     </div>
   );
+  console.log('=== DEBUG LISTA PACIENTES ===');
+  console.log('Response completa:', responseData);
+  console.log('Tipo de responseData:', typeof responseData);
+  console.log('Es array?', Array.isArray(responseData));
+  console.log('Tiene propiedad data?', responseData && 'data' in responseData);
+  console.log('Tiene propiedad success?', responseData && 'success' in responseData);
 
-  const pacientes = pacientesData?.data || [];
+  const pacientes = responseData || [];
+
+  console.log('Pacientes extraídos:', pacientes);
+  console.log('Número de pacientes:', pacientes.length);
+
+
 
   // Filtrar pacientes
   const filteredPacientes = pacientes.filter(paciente => {

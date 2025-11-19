@@ -1,13 +1,13 @@
 import api from './api';
 
 export const recomendacionesService = {
-  // ✅ Obtener recomendaciones del paciente
+  // ✅ Obtener recomendaciones ACTIVAS del paciente (las pendientes no se muestran)
   getRecomendaciones: async () => {
     const response = await api.get('/api/recomendaciones');
     return response.data;
   },
 
-  // ✅ Generar nuevas recomendaciones
+  // ✅ Generar nuevas recomendaciones (con validaciones)
   generarRecomendaciones: async () => {
     const response = await api.post('/api/recomendaciones/generar');
     return response.data;
@@ -34,6 +34,12 @@ export const recomendacionesService = {
   // ✅ Ver estado de IA
   getEstadoIA: async () => {
     const response = await api.get('/api/recomendaciones/estado-ia');
+    return response.data;
+  },
+
+  // ✅ NUEVO: Obtener recomendaciones de un paciente específico (para doctores)
+  getRecomendacionesPaciente: async (pacienteId) => {
+    const response = await api.get(`/api/recomendaciones/paciente/${pacienteId}`);
     return response.data;
   }
 };

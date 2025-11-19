@@ -4,6 +4,7 @@ const API_BASE_URL = 'http://localhost:8081/parkinson-care';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 10000, // 10 segundos
   headers: {
     'Content-Type': 'application/json',
   },

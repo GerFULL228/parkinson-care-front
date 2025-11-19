@@ -11,9 +11,13 @@ export const useApi = (apiCall, dependencies = []) => {
         setLoading(true);
         setError(null);
         const result = await apiCall();
-        setData(result.data);
+        console.log('🟢 useApi - Resultado completo:', result);
+        
+        setData(result);
+        
       } catch (err) {
-        setError(err.response?.data?.message || 'Error de conexión');
+        console.error('🔴 useApi - Error:', err);
+        setError(err.response?.data?.message || err.message || 'Error de conexión');
       } finally {
         setLoading(false);
       }
@@ -27,9 +31,9 @@ export const useApi = (apiCall, dependencies = []) => {
       setLoading(true);
       setError(null);
       const result = await apiCall();
-      setData(result.data);
+      setData(result);
     } catch (err) {
-      setError(err.response?.data?.message || 'Error de conexión');
+      setError(err.response?.data?.message || err.message || 'Error de conexión');
     } finally {
       setLoading(false);
     }

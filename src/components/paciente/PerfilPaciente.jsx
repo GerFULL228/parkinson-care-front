@@ -70,7 +70,7 @@ const PerfilPaciente = () => {
     </div>
   );
 
-  const paciente = perfilData;
+  const paciente = perfilData?.data;
 
   return (
     <div className="max-w-4xl mx-auto">

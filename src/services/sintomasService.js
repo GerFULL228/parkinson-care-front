@@ -1,7 +1,7 @@
 import api from './api';
 
 export const sintomasService = {
-  // ✅ REGISTRAR SÍNTOMAS (endpoint corregido)
+  // ✅ REGISTRAR SÍNTOMAS
   registrarSintoma: async (data) => {
     const response = await api.post('/api/sintomas', {
       nivelTemblor: data.nivelTemblor,
@@ -14,7 +14,7 @@ export const sintomasService = {
     return response.data;
   },
 
-  // ✅ OBTENER HISTORIAL (endpoint corregido)
+  // ✅ OBTENER HISTORIAL
   getHistorial: async () => {
     const response = await api.get('/api/sintomas');
     return response.data;
@@ -25,8 +25,6 @@ export const sintomasService = {
     const response = await api.get('/api/sintomas/estadisticas');
     return response.data;
   },
-
-  // ✅ NUEVOS MÉTODOS PARA COMPLETAR LA FUNCIONALIDAD
 
   // Obtener registro específico por ID
   getSintomaPorId: async (id) => {
@@ -53,15 +51,12 @@ export const sintomasService = {
     return response.data;
   },
 
-  // ✅ MÉTODOS PARA DOCTORES (si es necesario)
-  
-  // Obtener historial de paciente específico
+  // ✅ MÉTODOS PARA DOCTORES
   getHistorialPaciente: async (pacienteId) => {
     const response = await api.get(`/api/sintomas/paciente/${pacienteId}`);
     return response.data;
   },
 
-  // Registrar síntomas para paciente específico
   registrarSintomaPaciente: async (pacienteId, data) => {
     const response = await api.post(`/api/sintomas/paciente/${pacienteId}`, {
       nivelTemblor: data.nivelTemblor,
@@ -74,21 +69,17 @@ export const sintomasService = {
     return response.data;
   },
 
-  // Obtener estadísticas de paciente específico
   getEstadisticasPaciente: async (pacienteId) => {
     const response = await api.get(`/api/sintomas/paciente/${pacienteId}/estadisticas`);
     return response.data;
   },
 
   // ✅ MÉTODOS ADICIONALES ÚTILES
-
-  // Último registro
   getUltimoRegistro: async () => {
     const response = await api.get('/api/sintomas/ultimo');
     return response.data;
   },
 
-  // Historial por rango de fechas
   getSintomasPorRango: async (fechaInicio, fechaFin) => {
     const response = await api.get('/api/sintomas/rango', {
       params: {
@@ -99,7 +90,6 @@ export const sintomasService = {
     return response.data;
   },
 
-  // Resumen de la última semana
   getResumenSemanal: async () => {
     const response = await api.get('/api/sintomas/resumen');
     return response.data;
@@ -117,6 +107,15 @@ export const TENDENCIA = {
   MEJORANDO: 'MEJORANDO',
   EMPEORANDO: 'EMPEORANDO',
   ESTABLE: 'ESTABLE'
+};
+
+// ✅ CONSTANTES PARA ESTADOS DE RECOMENDACIONES
+export const ESTADO_RECOMENDACION = {
+  PENDIENTE_APROBACION: 'PENDIENTE_APROBACION',
+  APROBADA: 'APROBADA',
+  MODIFICADA: 'MODIFICADA',
+  RECHAZADA: 'RECHAZADA',
+  ACTIVA: 'ACTIVA'
 };
 
 // ✅ HELPERS PARA EL FRONTEND
@@ -139,4 +138,27 @@ export const formatearFechaSintoma = (fechaHora) => {
     hora: fecha.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
     completa: fecha.toLocaleString('es-ES')
   };
+};
+
+// ✅ HELPER PARA DETERMINAR COLOR DE PRIORIDAD
+export const getColorPrioridad = (prioridad) => {
+  switch (prioridad) {
+    case 'URGENTE': return 'bg-red-100 text-red-800 border-red-200';
+    case 'ALTA': return 'bg-orange-100 text-orange-800 border-orange-200';
+    case 'MEDIA': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+    case 'BAJA': return 'bg-green-100 text-green-800 border-green-200';
+    default: return 'bg-gray-100 text-gray-800 border-gray-200';
+  }
+};
+
+// ✅ HELPER PARA DETERMINAR COLOR DE ESTADO
+export const getColorEstado = (estado) => {
+  switch (estado) {
+    case 'PENDIENTE_APROBACION': return 'bg-yellow-100 text-yellow-800';
+    case 'APROBADA': return 'bg-green-100 text-green-800';
+    case 'MODIFICADA': return 'bg-blue-100 text-blue-800';
+    case 'RECHAZADA': return 'bg-red-100 text-red-800';
+    case 'ACTIVA': return 'bg-green-100 text-green-800';
+    default: return 'bg-gray-100 text-gray-800';
+  }
 };
